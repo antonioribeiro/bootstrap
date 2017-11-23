@@ -5,6 +5,7 @@
 const path = require('path')
 const sh = require('shelljs')
 sh.config.fatal = true
+//sh.config.verbose = true
 
 function lintVars(args) {
   if (args.length !== 2) {
@@ -19,21 +20,23 @@ function lintVars(args) {
     sh.exit(1)
   }
 
-  sh.echo('Finding unused variables. This might take some time...')
+  sh.echo('Finding unused variables...')
 
   const sassFiles = sh.find(path.join(dir, '*.scss'))
   // String of all Sass variables
   const variables = sh.grep(/^\$[a-zA-Z0-9_-][^:]*/g, sassFiles)
-                      .sed(/(\$[a-zA-Z0-9_-][^:]*).*/g, '$1')
+                      .sed(/\$([a-zA-Z0-9_-][^:]*).*/g, '$1')
                       .uniq()
-  //sh.echo(variables)
+                      .trim()
+
   // Convert string into an array
   const variablesArr = Array.from(variables.split('\n'))
-  //sh.echo(variablesArr)
-  // Loop through each variable
+  // Loop through each variable and each file
   variablesArr.forEach((variable) => {
-    //sh.echo(variable)
-    sh.grep(new RegExp(variable, 'g'), sassFiles)
+    sassFiles.forEach((file) => {
+      const re = `$${variable}`
+      sh.grep(new RegExp(re, 'g'), file)
+    })
   })
 
 }
